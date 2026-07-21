@@ -17,7 +17,7 @@ import json
 import sys
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 BASE = "https://gov-nl-ca.saas.smartcjm.com/m/mrdappointments"
@@ -117,6 +117,7 @@ def main() -> int:
     state_file = ROOT / "state.json"
     state = load_json(state_file, {
         "lastNotifiedSlots": [],
+        "alertedAt": {},
         "consecutiveFailures": 0,
         "lastHeartbeatDate": "",
         "checksSinceHeartbeat": 0,
@@ -134,16 +135,32 @@ def main() -> int:
 
         if slots:
             new = [s for s in slots if s not in state["lastNotifiedSlots"]]
-            log(f"AVAILABLE: {len(slots)} slot(s), {len(new)} new.")
+            preview = ", ".join(sorted(slots)[:10]) + (" ..." if len(slots) > 10 else "")
+            log(f"AVAILABLE: {len(slots)} slot(s), {len(new)} new: {preview}")
             if new:
+                # slots we have alerted on before: a repeat means the slot was
+                # taken/held and then re-released, so say that instead of
+                # looking like a duplicate alert
+                alerted = state.get("alertedAt", {})
                 shown = sorted(slots)[: config.get("maxSlotsInMessage", 20)]
-                lines = "\n".join(f"- {pretty(s)}" for s in shown)
+                lines = "\n".join(
+                    f"- {pretty(s)}" + (" *(re-opened)*" if s in alerted else "")
+                    for s in shown)
                 more = (f"\n...and {len(slots) - len(shown)} more"
                         if len(slots) > len(shown) else "")
                 msg = (f"{mention_prefix(config)}**SLOT OPEN!** "
                        f"{config['serviceName']} at {config['locationName']}:\n"
-                       f"{lines}{more}\nBOOK NOW -> {config['bookingUrl']}")
+                       f"{lines}{more}\nBOOK NOW -> {config['bookingUrl']}\n"
+                       "-# Gone when you get there? Someone may be holding it "
+                       "in checkout - holds expire within ~20 min, so keep trying.")
                 send_discord(config, msg)
+                now = datetime.now(timezone.utc)
+                for s in new:
+                    alerted[s] = now.isoformat()
+                state["alertedAt"] = {  # drop slots whose time has passed
+                    s: t for s, t in alerted.items()
+                    if datetime.fromisoformat(s) > now
+                }
                 state["lastNotifiedSlots"] = slots
         else:
             log("No slots.")

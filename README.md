@@ -12,7 +12,7 @@ you do the booking.
 **This tool only reads availability** — the same information the public
 booking page shows anyone. It never reserves, holds, or books anything, has no
 login, and sends no personal data. Polling is 2 lightweight requests every
-5 minutes, far less traffic than a human refreshing the page.
+2 minutes, far less traffic than a human refreshing the page.
 
 ## How it works
 
@@ -36,6 +36,13 @@ State lives in `state.json` (which slots were announced, failure streak,
 heartbeat date). The watcher also sends a daily "still alive" heartbeat and a
 warning if 5 consecutive checks fail (site changed / network down), so a silent
 death doesn't go unnoticed.
+
+A slot can vanish and later reappear: the booking wizard holds a slot while
+someone walks the checkout flow, and the hold expires after ~20 minutes if
+they don't finish. When an already-announced slot cycles back, the watcher
+alerts again with a *(re-opened)* label — a repeat alert for the same time
+is the site re-releasing the slot, not a duplicate bug. Slot times are also
+written to `watcher.log` so any alert can be reconstructed later.
 
 ## Setup
 
@@ -66,18 +73,18 @@ every service checkbox (`service_<uid>`) and location checkbox
 ### Linux (systemd timer — recommended, e.g. an always-on home server)
 
 ```bash
-sudo ./install.sh          # installs + starts a 5-minute systemd timer
+sudo ./install.sh          # installs + starts a 2-minute systemd timer
 journalctl -u roadtest-watcher -f   # watch it work
 ```
 
 ### Windows (Task Scheduler)
 
 Use `windows\RoadTestWatcher.ps1` (same logic + a loud looping toast alert).
-Register it every 5 minutes:
+Register it every 2 minutes:
 
 ```powershell
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\path\to\RoadTestWatcher.ps1"'
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 2) -RepetitionDuration (New-TimeSpan -Days 3650)
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
 Register-ScheduledTask -TaskName "NL Road Test Watcher" -Action $action -Trigger $trigger -Settings $settings
 ```
@@ -117,6 +124,6 @@ channel. It's why `config.json` is gitignored.
 
 This exists to spare two humans from refreshing a government website all day,
 not to give anyone an unfair edge — it doesn't book, hold, or queue
-anything. Keep the polling interval civil (the default 5 minutes is plenty;
+anything. Keep the polling interval civil (the default 2 minutes is plenty;
 availability is checked 2 requests at a time) and stop the watcher once
 you've booked.
