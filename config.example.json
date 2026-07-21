@@ -1,0 +1,12 @@
+{
+  "discordWebhookUrl": "PASTE_DISCORD_WEBHOOK_URL_HERE",
+  "mentionEveryone": false,
+  "mentionUserIds": ["PASTE_YOUR_DISCORD_USER_ID", "PASTE_OTHER_USER_ID"],
+  "serviceUid": "ab927a63-4727-4ea5-b2e6-8088bd02c43c",
+  "serviceName": "Road Test - Passenger (Class 05)",
+  "locationUid": "839bda54-c07b-4d15-b148-2b2d145401d1",
+  "locationName": "Mount Pearl Driver Examiners",
+  "bookingUrl": "https://gov-nl-ca.saas.smartcjm.com/m/mrdappointments/extern/calendar/?uid=91352e54-5c34-4e55-975b-d33c8ebe3da8&lang=en&set_lang_ui=en",
+  "heartbeatHour": 9,
+  "maxSlotsInMessage": 20
+}

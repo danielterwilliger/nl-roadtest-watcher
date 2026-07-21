@@ -1,0 +1,10 @@
+[Unit]
+Description=NL road test appointment watcher (single check)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+WorkingDirectory=__INSTALL_DIR__
+ExecStart=/usr/bin/python3 __INSTALL_DIR__/watcher.py

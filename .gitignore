@@ -1,0 +1,5 @@
+# local runtime files - never commit (config.json holds the private webhook URL)
+config.json
+state.json
+watcher.log
+STOP
