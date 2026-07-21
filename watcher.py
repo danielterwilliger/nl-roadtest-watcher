@@ -74,7 +74,8 @@ def get_slots(config: dict) -> list[str]:
 
 
 def mention_prefix(config: dict) -> str:
-    parts = [f"<@{uid}>" for uid in config.get("mentionUserIds", [])]
+    parts = [f"<@{uid}>" for uid in config.get("mentionUserIds", [])
+             if not str(uid).startswith("PASTE_")]
     if config.get("mentionEveryone"):
         parts.append("@everyone")
     return " ".join(parts) + " " if parts else ""
