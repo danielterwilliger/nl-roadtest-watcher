@@ -39,10 +39,17 @@ death doesn't go unnoticed.
 
 A slot can vanish and later reappear: the booking wizard holds a slot while
 someone walks the checkout flow, and the hold expires after ~20 minutes if
-they don't finish. When an already-announced slot cycles back, the watcher
-alerts again with a *(re-opened)* label — a repeat alert for the same time
-is the site re-releasing the slot, not a duplicate bug. Slot times are also
-written to `watcher.log` so any alert can be reconstructed later.
+they don't finish (verified end-to-end: a held slot left the API pool within
+seconds of the time-slot click and returned almost exactly 20 minutes later).
+When an already-announced slot cycles back, the watcher alerts again with a
+*(re-opened)* label — a repeat alert for the same time is the site
+re-releasing the slot, not a duplicate bug. One deliberate nuance: a slot
+that cycles back while other already-announced slots stayed visible does
+**not** re-alert on its own (the pool looks the same as the last alert —
+nothing new to say); it re-alerts once the pool has emptied in between, or
+rides along *(re-opened)* when the next genuinely new slot fires an alert.
+Slot times are also written to `watcher.log` so any alert can be
+reconstructed later.
 
 ## Setup
 
@@ -90,6 +97,17 @@ Register-ScheduledTask -TaskName "NL Road Test Watcher" -Action $action -Trigger
 ```
 
 The config file (`config.json`) sits next to the script in both variants.
+
+## Before a slot appears: prepay the road test fee
+
+Hard-won gotcha for NL specifically: the booking form has a **required "Road
+Test Receipt Number" field** — the transaction ID from prepaying the road
+test fee online (NL requires the fee paid at least 24 hours before the test,
+and the receipt shown to the examiner). The checkout hold is only ~20
+minutes, so if you haven't prepaid when the alert lands, you may not be able
+to finish the form in time. **Pay the fee and have the transaction ID ready
+before you start watching.** Entering inaccurate booking information can get
+the appointment cancelled.
 
 ## Discord notifications
 
